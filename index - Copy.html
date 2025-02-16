@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senior Assist</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        button, input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .photo-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        .chat-btn {
+            background: #008CBA;
+            color: white;
+        }
+        #chat-box {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            text-align: left;
+            height: 250px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Senior Assist AI</h1>
+    
+    <div class="container">
+        <h2>Photo Recognition</h2>
+        <input type="file" id="imageInput">
+        <button class="photo-btn" onclick="identifyImage()">Identify Photo</button>
+        <p id="result"></p>
+    </div>
+
+    <div class="container">
+        <h2>Companion Chat</h2>
+        <div id="chat-box"></div>
+        <input type="text" id="userInput" placeholder="Say something...">
+        <button class="chat-btn" onclick="sendMessage()">Talk to AI</button>
+        <button class="chat-btn" onclick="startVoiceRecognition()">🎤 Speak</button>
+    </div>
+
+    <script>
+        async function identifyImage() {
+            const imageInput = document.getElementById('imageInput');
+            const resultText = document.getElementById('result');
+
+            if (imageInput.files.length === 0) {
+                resultText.innerText = "Please upload a photo.";
+                return;
+            }
+
+            const model = await mobilenet.load();
+            const img = document.createElement("img");
+            img.src = URL.createObjectURL(imageInput.files[0]);
+            img.onload = async function () {
+                const predictions = await model.classify(img);
+                resultText.innerText = "I see: " + predictions[0].className;
+            };
+        }
+
+        function sendMessage() {
+            const chatBox = document.getElementById("chat-box");
+            const userInput = document.getElementById("userInput").value;
+            if (!userInput) return;
+
+            chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+            let response = getAIResponse(userInput);
+
+            setTimeout(() => {
+                chatBox.innerHTML += `<p><strong>AI:</strong> ${response}</p>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 1000);
+
+            document.getElementById("userInput").value = "";
+        }
+
+        function getAIResponse(input) {
+            input = input.toLowerCase();
+            if (input.includes("sad")) return "I'm here for you. Everything will be okay.";
+            if (input.includes("hello")) return "Hello! How is your day going?";
+            if (input.includes("lonely")) return "You are never alone. I'm here to chat!";
+            return "That sounds interesting! Tell me more.";
+        }
+
+        function startVoiceRecognition() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById("userInput").value = transcript;
+                sendMessage();
+            };
+        }
+    </script>
+
+</body>
+</html>
